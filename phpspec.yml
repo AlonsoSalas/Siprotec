@@ -1,0 +1,5 @@
+suites:
+    main:
+        namespace: siprotec
+        psr4_prefix: siprotec
+        src_path: app
