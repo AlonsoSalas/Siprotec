@@ -13,7 +13,7 @@
 
 Route::get('/', 'WelcomeController@index');
 
-Route::get('home', 'HomeController@index');
+Route::get('home', 'HomeController@indexpro');
 
 Route::controllers([
     'users' => 'UserController',
@@ -21,9 +21,13 @@ Route::controllers([
 	'password' => 'Auth\PasswordController',
 ]);
 
-Route::get('proyectos', 'ProyectosController@index');
-
 Route::resource('proyectos', 'ProyectosController');
+
+Route::get('proyectos', 'ProyectosController@indexpro');
+
+Route::get('proyectosEspe', 'ProyectosController@proyectosEspe');
+Route::get('proyectosStatus', 'ProyectosController@proyectosStatus');
+Route::get('proyectosFecha', 'ProyectosController@index');
 
 Route::get('proyectos2', 'ProyectosController@Proyectos2');
 
@@ -49,7 +53,7 @@ Route::get('eliminarprove/{id_proyecto}',[
     'as' => 'eliminarprove', 'uses' => 'NewMetaController@eliminarprove'
 ]);
 
-Route::get('eliminarespe/{id_proyecto}',[
+Route::get('eliminarespe/{espe}',[
     'as' => 'eliminarespe', 'uses' => 'NewMetaController@eliminarespe'
 ]);
 
@@ -57,16 +61,18 @@ Route::get('editarproyecto/{id_proyecto}', [
     'as' => 'editarproyecto', 'uses' => 'NewMetaController@editar'
 ]);
 
-Route::get('formulario','StorageController@index');
+Route::get('comentario/{id_proyecto}', [
+    'as' => 'comentario', 'uses' => 'NewMetaController@comentario'
+]);
+
+Route::post('agregarcomentario/{id_proyecto}',[
+    'as' => 'agregarcomentario', 'uses' => 'NewMetaController@agregarcomentario'
+]);
+
 
 Route::post('save',[
     'as' => 'save', 'uses' => 'NewMetaController@save'
 ]);
-
-//
-//Route::post('fileentry/add',[
-//    'as' => 'addentry', 'uses' => 'StorageController@add']);
-
 
 Route::controller('uploads','UploadsController');
 
@@ -116,7 +122,45 @@ Route::get('descargarfactura/{filename}', [
 Route::get('eliminarfactura/{filename}', [
     'as' => 'eliminarfactura', 'uses' => 'NewMetaController@eliminarfactura']);
 
+Route::get('descargarinforme/{filename}', [
+    'as' => 'descargarinforme', 'uses' => 'NewMetaController@descargarinforme']);
+Route::get('eliminarinforme/{filename}', [
+    'as' => 'eliminarinforme', 'uses' => 'NewMetaController@eliminarinforme']);
+
+Route::get('descargarindi/{filename}', [
+    'as' => 'descargarindi', 'uses' => 'NewMetaController@descargarindi']);
+Route::get('eliminarindi/{filename}', [
+    'as' => 'eliminarindi', 'uses' => 'NewMetaController@eliminarindi']);
+
 Route::get('reportes', 'ReportesController@index');
+
+Route::get('especialistas', 'EspecialistasController@internos');
+
+Route::get('proveedores', 'EspecialistasController@externos');
 
 Route::get('eliminarproyect/{id}', [
     'as' => 'eliminarproyect', 'uses' => 'NewMetaController@eliminarproyect']);
+
+Route::get('eliminarespein/{id}', [
+    'as' => 'eliminarespein', 'uses' => 'EspecialistasController@eliminarespein']);
+
+Route::post('agregarespein', [
+    'as' => 'agregarespein', 'uses' => 'EspecialistasController@agregarespein']);
+
+Route::get('eliminarespeex/{id}', [
+    'as' => 'eliminarespeex', 'uses' => 'EspecialistasController@eliminarespeex']);
+
+Route::post('agregarespeex', [
+    'as' => 'agregarespeex', 'uses' => 'EspecialistasController@agregarespeex']);
+
+Route::get('editarespeex/{id}', [
+    'as' => 'editarespeex', 'uses' => 'EspecialistasController@editarespeex']);
+
+Route::put('updateespeex/{id}', [
+    'as' => 'updateespeex', 'uses' => 'EspecialistasController@updateespeex']);
+
+Route::get('editarespein/{id}', [
+    'as' => 'editarespein', 'uses' => 'EspecialistasController@editarespein']);
+
+Route::put('updateespein/{id}', [
+    'as' => 'updateespein', 'uses' => 'EspecialistasController@updateespein']);

@@ -12,6 +12,7 @@ use siprotec\User;
 use siprotec\ProyectEspe;
 use siprotec\Proveedor;
 use siprotec\AreaMeta;
+use siprotec\Observacion;
 use Illuminate\Http\Request;
 use siprotec\Proyecto;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,8 +28,10 @@ class PdfController extends Controller {
         $especialistas = User::paginate(100);
         $proyectos = Proyecto::paginate(100);
         $proyectoespe = ProyectEspe::paginate(100);
-        $areas = Area::paginate(25);
+        $areas = Area::paginate(100);
+	$comentarios = Observacion::paginate(110000);
         $ahora = new DateTime("now");
+        $comment= '';
 
 //        USANDO FPDF
         $pdf3 = new \fpdi\FPDI();
@@ -43,6 +46,7 @@ class PdfController extends Controller {
         $pdf3->SetFontSize(9);
         $pdf3->SetTextColor(0,0,0);
         $i =39;
+        $contad=1;
         foreach($proyectos as $proyecto){
             if ($proyecto->fecha_inicio and $request->get('fecha_inicio')<= $proyecto->fecha_inicio and $request->get('fecha_fin')>= $proyecto->fecha_inicio) {
                 if ($proyecto->fecha_inicio) {
@@ -53,7 +57,8 @@ class PdfController extends Controller {
                         $dias_transcurridos = $inic->diff($ahora);
                         //dd($ddias->format('%R%a dias'));
                         $pdf3->SetXY(7, $i);
-                        $pdf3->Write(0, $proyecto->id_proyecto);
+                        $pdf3->Write(0, $contad);
+                        $contad=$contad+1;
                         $pdf3->SetXY(23, $i);
                         foreach ($areas as $a) {
                             if ($a->nombre == $proyecto->id_departamento) {
@@ -127,6 +132,41 @@ class PdfController extends Controller {
                         } else {
                             $pdf3->Write(0, round($dias_transcurridos->format('%R%a dias') * 100 / $diferencia_dias->format('%R%a dias')) . '%');
                         }
+
+                        foreach ($comentarios as $com) {
+                            if ($com->id_proyecto == $proyecto->id_proyecto) {
+                                $comment = $com->comentario;
+                            }
+                        }
+                        $pdf3->SetXY(212, $i);
+                        $len = strlen($comment);
+                        if ($len > 24) {
+                            $len = $len - 24;
+                            $pdf3->Write(0, substr($comment, 0, 24));
+                            $pdf3->SetXY(212, $i + 3);
+                            if ($len > 24) {
+                                $len = $len - 24;
+                                $pdf3->Write(0, substr($comment, 24, 24));
+                                $pdf3->SetXY(212, $i + 6);
+                                if ($len > 24) {
+                                    $len = $len - 24;
+                                    $pdf3->Write(0, substr($comment, 48, 24));
+                                    $pdf3->SetXY(212, $i + 9);
+                                    if ($len > 24) {
+                                        $pdf3->Write(0, substr($comment, 72, 24) . "...");
+                                    } else {
+                                        $pdf3->Write(0, substr($comment, 72, 24));
+                                    }
+                                } else {
+                                    $pdf3->Write(0, substr($comment, 48, 24));
+                                }
+                            } else {
+                                $pdf3->Write(0, substr($comment, 24, 24));
+                            }
+                        } else {
+                            $pdf3->Write(0,$comment);
+                        }
+			
                         $i = $i + 15.5;
 
                     }
@@ -134,6 +174,7 @@ class PdfController extends Controller {
             }
         }
 
+	
         $pdf3->Output('newpdf.pdf','I');
     }
 
@@ -148,7 +189,7 @@ class PdfController extends Controller {
 //        USANDO FPDF
         $pdf3 = new \fpdi\FPDI();
         $pdf3->AddPage('L');
-        $pdf3->setSourceFile('FO-UCT-05 (se va a cambiar).pdf');
+        $pdf3->setSourceFile('FO-UCT-05.pdf');
         $tplIdx = $pdf3->importPage(1);
         $pdf3->useTemplate($tplIdx, 0, 0);
         $pdf3->SetFont('Arial');
@@ -157,18 +198,20 @@ class PdfController extends Controller {
         $pdf3->Write(0, $ahora->format('d/m/Y'));
         $pdf3->SetTextColor(0,0,0);
         $i =47;
+        $contad=1;
         foreach($proyectos as $proyect){
             if ($proyect->fecha_inicio and $request->get('fecha_inicio')<= $proyect->fecha_inicio and $request->get('fecha_fin')>= $proyect->fecha_inicio) {
                 if ($i < 196) {
-                    $pdf3->SetXY(7, $i);
-                    $pdf3->Write(0, $proyect->id_proyecto);
-                    $pdf3->SetXY(17, $i);
+                    $pdf3->SetXY(10, $i);
+                    $pdf3->Write(0, $contad);
+                    $contad=$contad+1;
+                    $pdf3->SetXY(21, $i);
                     foreach ($areas as $a) {
                         if ($a->nombre == $proyect->id_departamento) {
                             $pdf3->Write(0, $a->short);
                         }
                     }
-                    $pdf3->SetXY(30, $i - 1);
+                    $pdf3->SetXY(33, $i - 1);
                     $pdf3->SetFontSize(7);
                     foreach ($areas as $a) {
                         if ($a->nombre == $proyect->id_departamento) {
@@ -176,7 +219,7 @@ class PdfController extends Controller {
                             if ($len > 17) {
                                 $len = $len - 17;
                                 $pdf3->Write(0, substr($a->nombre, 0, 17));
-                                $pdf3->SetXY(30, $i + 2);
+                                $pdf3->SetXY(33, $i + 2);
                                 if ($len > 19) {
                                     $pdf3->Write(0, substr($a->nombre, 17, 17) . "...");
                                 } else {
@@ -187,13 +230,13 @@ class PdfController extends Controller {
                             }
                         }
                     }
-                    $pdf3->SetXY(55, $i - 1);
+                    $pdf3->SetXY(58, $i - 1);
                     $pdf3->SetFontSize(7);
                     $len = strlen($proyect->nombre);
                     if ($len > 23) {
                         $len = $len - 23;
                         $pdf3->Write(0, substr($proyect->nombre, 0, 23));
-                        $pdf3->SetXY(55, $i + 2);
+                        $pdf3->SetXY(58, $i + 2);
                         if ($len > 29) {
                             $pdf3->Write(0, substr($proyect->nombre, 23, 23) . "...");
                         } else {
@@ -202,7 +245,7 @@ class PdfController extends Controller {
                     } else {
                         $pdf3->Write(0, $proyect->nombre);
                     }
-                    $pdf3->SetXY(93, $i);
+                    $pdf3->SetXY(97, $i);
                     $pdf3->SetFontSize(7);
                     foreach ($proyectoespe as $t) {
                         if ($t->id_proyecto == $proyect->id_proyecto) {
@@ -210,6 +253,7 @@ class PdfController extends Controller {
                                 if ($t->id_especialista == $es->id) {
                                     foreach ($areas as $a) {
                                         if ($a->nombre == $es->id_area) {
+
                                             $pdf3->Write(0, $a->responsable);
                                         }
                                     }
@@ -218,7 +262,7 @@ class PdfController extends Controller {
                         }
                     }
 
-                    $pdf3->SetXY(123, $i - 1);
+                    $pdf3->SetXY(125, $i - 1);
                     $pdf3->SetFontSize(7);
                     foreach ($proyectoespe as $t) {
                         if ($t->id_proyecto == $proyect->id_proyecto) {
@@ -228,7 +272,7 @@ class PdfController extends Controller {
                                     if ($len > 23) {
                                         $len = $len - 23;
                                         $pdf3->Write(0, substr($es->id_area, 0, 23));
-                                        $pdf3->SetXY(123, $i + 1);
+                                        $pdf3->SetXY(125, $i + 1);
                                         if ($len > 20) {
                                             $pdf3->Write(0, substr($es->id_area, 23, 23) . "...");
                                         } else {
@@ -243,7 +287,7 @@ class PdfController extends Controller {
                     }
 
                     $pdf3->SetFontSize(7);
-                    $pdf3->SetXY(156, $i);
+                    $pdf3->SetXY(160, $i);
                     foreach ($proyectoespe as $t) {
                         if ($t->id_proyecto == $proyect->id_proyecto) {
                             foreach ($especialistas as $es) {
@@ -255,22 +299,22 @@ class PdfController extends Controller {
                         }
                     }
                     $pdf3->SetFontSize(8);
-                    $pdf3->SetXY(184, $i);
+                    $pdf3->SetXY(187, $i);
                     $pdf3->Write(0, $proyect->fecha_inicio);
-                    $pdf3->SetXY(202, $i);
+                    $pdf3->SetXY(205, $i);
                     $pdf3->Write(0, $proyect->fecha_fin);
                     $pdf3->SetFontSize(9);
 //                $pdf3->SetXY(222, $i);
 //                $pdf3->Write(0, "x");
-                    $pdf3->SetXY(232, $i);
+                    $pdf3->SetXY(228, $i);
                     if ($proyect->levantamiento) {
                         $pdf3->Write(0, "x");
                     }
-                    $pdf3->SetXY(245, $i);
+                    $pdf3->SetXY(242, $i);
                     if ($proyect->plantrabajo) {
                         $pdf3->Write(0, "x");
                     }
-                    $pdf3->SetXY(258, $i);
+                    $pdf3->SetXY(256, $i);
                     if ($proyect->certificacion) {
                         $pdf3->Write(0, "x");
                     }
@@ -310,11 +354,13 @@ class PdfController extends Controller {
         $pdf3->SetTextColor(0,0,0);
         $i =37;
         $pdf3->SetFontSize(9);
+        $contad=1;
         foreach($proyectos as $proyect) {
             if ($proyect->fecha_inicio and $request->get('fecha_inicio')<= $proyect->fecha_inicio and $request->get('fecha_fin')>= $proyect->fecha_inicio){
                 if ($proyect->ext_int_enum == 'externo') {
                     $pdf3->SetXY(3, $i);
-                    $pdf3->Write(0, $proyect->id_proyecto);
+                    $pdf3->Write(0, $contad);
+                    $contad=$contad+1;
                     $pdf3->SetXY(10, $i);
                     $pdf3->Write(0, $proyect->tipo);
                     $pdf3->SetXY(31, $i);
@@ -332,7 +378,13 @@ class PdfController extends Controller {
                         $pdf3->Write(0, $proyect->nombre);
                     }
                     $pdf3->SetXY(76, $i);
-                    $pdf3->Write(0, "Alonso Salas");
+
+
+                    foreach ($areas as $a) {
+                        if ($a->nombre == $proyect->id_departamento) {
+                            $pdf3->Write(0, $a->responsable);
+                        }
+                    }
                     $pdf3->SetXY(124, $i);
                     foreach ($proyectoespe as $t) {
                         if ($t->id_proyecto == $proyect->id_proyecto) {
@@ -356,7 +408,19 @@ class PdfController extends Controller {
                         }
                     }
                     $pdf3->SetXY(158, $i);
-                    $pdf3->Write(0, "Alonso Salas");
+                    foreach ($proyectoespe as $t) {
+                        if ($t->id_proyecto == $proyect->id_proyecto) {
+                                foreach ($proveedores as $proveedor) {
+                                    if ($proveedor->id_proveedor == $t->id_proveedor) {
+                                        $len = strlen($proveedor->nombre);
+                                        $pdf3->Write(0, $proveedor->responsable);
+                                    }
+                                }
+                        }
+                    }
+
+
+
                     $pdf3->SetXY(189.5, $i);
                     $pdf3->SetFontSize(9);
                     if ($proyect->fecha_inicio) {
@@ -410,6 +474,7 @@ class PdfController extends Controller {
         $pdf3->SetTextColor(0,0,0);
         $i =72;
         $pdf3->SetFontSize(8);
+        $contad=1;
         for($i;$i<180;$i=$i+3.975){
             $pdf3->SetXY(18, $i);
             $pdf3->Write(0, "12");
@@ -566,11 +631,13 @@ class PdfController extends Controller {
         $pdf3->SetTextColor(0,0,0);
         $i =42;
         $pdf3->SetFontSize(8);
+        $contad=1;
         foreach($proyectos as $proyect) {
             if ($proyect->fecha_inicio and $request->get('fecha_inicio') <= $proyect->fecha_inicio and $request->get('fecha_fin') >= $proyect->fecha_inicio) {
                 if ($i < 190 and $proyect->tipo == 'Meta') {
                     $pdf3->SetXY(13, $i);
-                    $pdf3->Write(0, $proyect->id_proyecto);
+                    $pdf3->Write(0, $contad);
+                    $contad=$contad+1;
                     $pdf3->SetXY(23, $i);
                     foreach ($areas as $a) {
                         if ($a->nombre == $proyect->id_departamento) {

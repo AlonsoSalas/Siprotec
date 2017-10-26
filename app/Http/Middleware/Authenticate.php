@@ -34,6 +34,10 @@ class Authenticate {
 	{
 		if ($this->auth->guest())
 		{
+            if ($this->auth->user()->tipo =='admin') {
+                return redirect()->route('home');
+            }
+            else
 			if ($request->ajax())
 			{
 				return response('Unauthorized.', 401);

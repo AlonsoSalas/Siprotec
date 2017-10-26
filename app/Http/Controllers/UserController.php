@@ -6,7 +6,7 @@ use Illuminate\Routing\Controller;
 class UserController extends Controller{
 
     public function getIndex(){
-       $result = \DB::table('Usuario')->get();
+       $result = \DB::table('users')->get();
 
         dd($result);
 

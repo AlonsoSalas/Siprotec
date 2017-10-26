@@ -7,7 +7,7 @@ class Proveedor extends Model {
     protected $table = 'Proveedor';
 
 
-    protected $fillable = ['id_proveedor', 'nombre', 'descripcion'];
+    protected $fillable = ['id_proveedor', 'nombre', 'descripcion','responsable'];
 
 
     public $timestamps = false;

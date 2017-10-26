@@ -1,4 +1,4 @@
-@extends('newhome')
+@extends('newhomepro')
 
 @section('content')
     <div class="content-wrapper">
@@ -79,8 +79,8 @@
                                                             @endforeach
                                                         @else
                                                             @foreach($proveedores as $es)
-                                                                @if($t->id_proveedor == $es->id)
-                                                                    <i class="fa fa-fw fa-user"></i>{{$es->nombre}}<br>
+                                                                @if($t->id_proveedor == $es->id_proveedor)
+                                                                    <i class="fa fa-fw fa-building"></i>{{$es->nombre}}<br>
                                                                 @endif
                                                             @endforeach
                                                         @endif
@@ -89,12 +89,14 @@
                                             </td>
                                             <td>
                                                 <a href="{{ url('editarproyecto', $proyecto) }}"><i class="fa fa-fw fa-edit"></i>Editar</a>
-                                                <a href="{{ url('eliminarproyect', $proyecto) }}" onclick="return confirm('Sefuro que desea eliminar?')" class="btn-delete">
+                                                <a href="{{ url('eliminarproyect', $proyecto) }}" onclick="return confirm('Seguro que desea eliminar?')" class="btn-delete"><i class="fa fa-fw fa-times"></i>Eliminar</a>
+                                                <a href="{{ url('comentario', $proyecto) }}"><i class="fa fa-fw fa-comment"></i>Comentar</a>
                                             </td>
                                         </tr>
                                     @endif
                                 @endforeach
                             </table>
+                            {!! $proyectos->render() !!}
                         </div><!-- /.box-body -->
                     </div><!-- /.box -->
                 </div>
@@ -153,24 +155,35 @@
                                             <td>{{$proyecto->prioridad}}</td>
                                             <td>
                                                 @foreach($ProyectEspe as $t)
-
                                                     @if($t->id_proyecto == $proyecto->id_proyecto)
-                                                        @foreach($especialistas as $es)
-                                                            @if($t->id_especialista == $es->id)
-                                                                <i class="fa fa-fw fa-user"></i>{{$es->nombre}}<br>
-                                                            @endif
-                                                        @endforeach
+                                                        @if($proyecto->ext_int_enum == 'interno')
+                                                            @foreach($especialistas as $es)
+                                                                @if($t->id_especialista == $es->id)
+                                                                    <i class="fa fa-fw fa-user"></i>{{$es->nombre}}<br>
+                                                                @endif
+                                                            @endforeach
+                                                        @else
+                                                            @foreach($proveedores as $es)
+                                                                @if($t->id_proveedor == $es->id_proveedor)
+                                                                    <i class="fa fa-fw fa-building"></i>{{$es->nombre}}<br>
+                                                                @endif
+                                                            @endforeach
+                                                        @endif
                                                     @endif
                                                 @endforeach
                                             </td>
                                             <td>
                                                 <a href="{{ url('editarproyecto', $proyecto) }}"><i class="fa fa-fw fa-edit"></i>Editar</a>
-                                                <a href="{{ url('eliminarproyect', $proyecto) }}" onclick="return confirm('Sefuro que desea eliminar?')" class="btn-delete">
+
+                                                <a href="{{ url('eliminarproyect', $proyecto) }}" onclick="return confirm('Sefuro que desea eliminar?')" class="btn-delete"><i class="fa fa-fw fa-times"></i>Eliminar</a>
+                                                <a href="{{ url('comentario', $proyecto) }}"><i class="fa fa-fw fa-comment"></i>Comentar</a>
                                             </td>
+
                                         </tr>
                                     @endif
                                 @endforeach
                             </table>
+                            {!! $proyectos->render() !!}
                         </div><!-- /.box-body -->
                     </div><!-- /.box -->
                 </div>

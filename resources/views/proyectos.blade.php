@@ -1,4 +1,4 @@
-@extends('newhome')
+@extends('newhomepro')
 
 @section('content')
     <div class="content-wrapper">
@@ -41,12 +41,30 @@
                                     {{--<li><a href="#">Especialista</a></li>--}}
                                 {{--</ul>--}}
                                 <div class="btn-group">
-                                    {!! Form::open (['url'=> 'proyectos.index', 'method' => 'GET', 'class'=>'navbar-form navbar-left pull-right','role'=>'search']) !!}
-                                        <div class="form-group">
-                                            <input type="text" name="name" class="form-control" placeholder="Search">
+                                    {{--{!! Form::open especialista(['route' => 'proyectos.index', 'method' => 'GET', 'class'=>'navbar-form navbar-left pull-right','role'=>'search']) !!}--}}
+                                        {{--<div class="input-group">--}}
+                                          {{--{!! Form::text('name', null, [ 'class' => 'form-control', 'placeholder' => 'Search']) !!}--}}
+                                        {{--</div>--}}
+                                        {{--<button type="submit" class="btn btn-default">Buscar</button>--}}
+                                    {{--{!! Form::close() !!}--}}
+                                    {{--{!! Form::open (['route' => 'proyectos.index', 'method' => 'GET', 'class'=>'navbar-form navbar-left pull-right','role'=>'search']) !!}--}}
+                                    <div class="row pull-right">
+                                        {{--<div class="btn-group-sm col-md-5 col-md-offset-4" role="group" aria-label="...">--}}
+                                            {{--<a href="{{ url('proyectosEspe') }}" type="button" class="btn btn-default">Especialista</a>--}}
+                                            {{--<a href="{{ url('proyectosStatus') }}" type="button" class="btn btn-default">Status</a>--}}
+                                            {{--<a href="{{ url('proyectosFecha') }}" type="button" class="btn btn-default">Fecha</a>--}}
+                                        {{--</div>--}}
+                                        <div class="col-lg-3 pull-right">
+                                            {!! Form::open (['route' => 'proyectos.index', 'method' => 'GET', 'class'=>'input-group pull-right','role'=>'search']) !!}
+                                                {!! Form::text('name', null, [ 'class' => 'form-control', 'placeholder' => 'Nombre de Proyecto']) !!}
+                                                  <span class="input-group-btn">
+                                                    <button class="btn btn-default" type="submit">Buscar</button>
+                                                  </span>
+                                            {!! Form::close() !!}
                                         </div>
-                                        <button type="submit" class="btn btn-default">Submit</button>
-                                    {!! Form::close() !!}
+                                    </div>
+                                    {{--{!! Form::close() !!}--}}
+
                                     {{--<button type="button" class="btn btn-default">Ordenar por</button>--}}
                                     {{--<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">--}}
                                         {{--<span class="caret"></span>--}}
@@ -79,26 +97,31 @@
                                     $inic = new DateTime($proyecto->fecha_inicio);
                                     $fin = new DateTime($proyecto->fecha_fin);
                                     $diferencia_dias=$inic->diff($fin);
-                                    $dias_transcurridos=$inic->diff($ahora)
+                                    $dias_transcurridos=$inic->diff($ahora);
+                                    $proyecto->save();
                                     ?>
 
                                 <tr>
                                     <td><small>{{$proyecto->codigo}}</small></td>
                                     <td>{{$proyecto->tipo}}</td>
-                                    <td>{{$proyecto->id_departamento}}</td>
+                                    <td><small>{{$proyecto->id_departamento}}</small></td>
                                     @if($proyecto->certificacion)
                                         <td><span class="label label-success">Certificado</span></td>
+                                        <?php $proyecto->id_enum_estatus='Certificado' ?>
                                     @else
                                         @if($proyecto->fecha_inicio and $ahora>=$fin)
-                                            <td><span class="label label-danger">Vencido</span></td>
+                                            <td><small><span class="label label-danger">Vencido</span></small></td>
                                         @else
                                             @if($proyecto->especialista)
-                                                <td><span class="label label-success">En Desarrollo</span></td>
+                                                <td><small><span class="label label-success">En Desarrollo</span></small></td>
+                                               <?php $proyecto->id_enum_estatus='Desarrollo'?>
                                             @else
-                                                <td><span class="label label-warning">Pendiente por asignar</span></td>
+                                                <td><small><span class="label label-warning">Pendiente por asignar</span></small></td>
+                                                <?php  $proyecto->id_enum_estatus='Pendiente por asignar'?>
                                             @endif
                                         @endif
                                     @endif
+                                    <?php $proyecto->save() ?>
                                     <td>{{$proyecto->nombre}}</td>
 
                                     {{--<td>{{$proyecto->especialista}}</td>--}}
@@ -139,12 +162,13 @@
                                     <td>
                                         <a href="{{ url('editarproyecto', $proyecto) }}"><i class="fa fa-fw fa-edit"></i>Editar</a>
 
-                                        <a href="{{ url('eliminarproyect', $proyecto) }}" onclick="return confirm('Sefuro que desea eliminar?')" class="btn-delete"><i class="fa fa-fw fa-times"></i>Eliminar</a>
-
+                                        <a href="{{ url('eliminarproyect', $proyecto) }}" onclick="return confirm('Seguro que desea eliminar?')" class="btn-delete"><i class="fa fa-fw fa-times"></i>Eliminar</a>
+                                        <a href="{{ url('comentario', $proyecto) }}"><i class="fa fa-fw fa-comment"></i>Comentar</a>
                                     </td>
                                 </tr>
                                 @endforeach
                             </table>
+                            {!! $proyectos->render() !!}
                         </div><!-- /.box-body -->
                     </div><!-- /.box -->
                 </div>

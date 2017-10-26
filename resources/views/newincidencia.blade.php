@@ -1,8 +1,8 @@
-@extends('newhome')
+@extends('newhomepro')
 
 @section('content')
     <div class="content-wrapper">
-        {!! Form::open (['route'=> 'newmeta.store', 'method' => 'POST', 'class'=>'form-horizontal', 'files'=>true]) !!}
+        {!! Form::open (['route'=> 'newmeta.store', 'method' => 'POST', 'class'=>'form-horizontal', 'files'=>true, 'enctype'=>'multipart/form-data']) !!}
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
         <!-- Content Header (Page header) -->
 
@@ -45,7 +45,12 @@
                                     </div>
                                     <div class="col-xs-3">
                                         {!! Form::label(null, 'Area Solicitante:') !!}
-                                        {!! Form::select('id_departamento',$areas,null,['class'=>'form-control']) !!}
+                                        <select class="form-control input-sm" name="id_departamento">
+                                            @foreach($areas as $opcion )
+                                                <option> {{$opcion->nombre}}</option>
+                                            @endforeach
+                                        </select>
+
                                     </div>
                                     <div class="col-xs-3">
                                         {!! Form::label(null, 'Prioridad:') !!}

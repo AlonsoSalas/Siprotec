@@ -5,14 +5,43 @@ use siprotec\ProyectEspe;
 use siprotec\Proyecto;
 use siprotec\User;
 use siprotec\Area;
-use Symfony\Component\HttpFoundation\Request;
+use Request;
 
 class ProyectosController extends Controller {
 
 
-    public function index(Request $request)
+    public function indexpro(Request $request)
     {
-        $proyectos = Proyecto::paginate(100);
+        $proyectos = Proyecto::name(Request::input('name'))->orderBy('id_proyecto','desc')->paginate(10);
+        $ProyectEspe = ProyectEspe::paginate(100);
+        $especialistas = User::paginate(100);
+        $proveedores = Proveedor::paginate(1000);
+        return view('proyectos', compact('proyectos','ProyectEspe','especialistas','proveedores'));
+
+    }
+
+    public function proyectosEspe()
+    {
+        $proyectos= \DB::table('Proyecto')->orderBy('especialista', 'desc')->paginate(10);
+        $ProyectEspe = ProyectEspe::paginate(100);
+        $especialistas = User::paginate(100);
+        $proveedores = Proveedor::paginate(1000);
+        return view('proyectos', compact('proyectos','ProyectEspe','especialistas','proveedores'));
+
+    }
+
+    public function proyectosStatus()
+    {
+        $proyectos= \DB::table('Proyecto')->orderBy('id_enum_estatus', 'desc')->paginate(10);
+        $ProyectEspe = ProyectEspe::paginate(100);
+        $especialistas = User::paginate(100);
+        $proveedores = Proveedor::paginate(1000);
+        return view('proyectos', compact('proyectos','ProyectEspe','especialistas','proveedores'));
+
+    }
+    public function proyectosFecha()
+    {
+        $proyectos = \DB::table('Proyecto')->orderBy('fecha_ingreso', 'desc')->paginate(10);
         $ProyectEspe = ProyectEspe::paginate(100);
         $especialistas = User::paginate(100);
         $proveedores = Proveedor::paginate(1000);
@@ -27,14 +56,14 @@ class ProyectosController extends Controller {
 
     public function newincidencia()
     {
-        $areas = Area::paginate(25)->lists('nombre');
-        $especialistas = User::paginate(25);
+        $areas = Area::paginate(100);
+        $especialistas = User::paginate(1000000);
         return view('newincidencia',compact('areas','especialistas'));
     }
 
     public function Proyectos2()
     {
-        $proyectos = Proyecto::paginate();
+        $proyectos = Proyecto::paginate(16);
         $ProyectEspe = ProyectEspe::paginate(100);
         $especialistas = User::paginate(100);
         $proveedores =  Proveedor::paginate(1000);

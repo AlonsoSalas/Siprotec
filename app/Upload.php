@@ -6,14 +6,14 @@ class Upload extends Model {
 
     public $timestamps = false;
 
-    protected $table = 'Observacion';
+    protected $table = 'uploads';
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
-    protected $fillable = ['id_usuario', 'id_proyecto', 'comentario' , 'id_pase', 'fecha'];
+    protected $fillable = ['filename', 'fecha', 'id_proyecto' , 'tipo'];
 
     /**
      * The attributes excluded from the model's JSON form.

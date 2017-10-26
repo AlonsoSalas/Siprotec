@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\Session;
 use siprotec\Area;
 use siprotec\AreaMeta;
 use siprotec\Proveedor;
-use siprotec\ProyectEspe;
+use Input;
 use siprotec\Proyecto;
 use siprotec\User;
+use siprotec\ProyectEspe;
+use siprotec\Observacion;
 use DateTime;
 use siprotec\Upload;
 use Illuminate\Http\Response;
@@ -26,11 +28,30 @@ use Illuminate\Support\Facades\File;
 
 class NewMetaController extends Controller {
 
-    public function index()
+    public function index(Request $request)
     {
-        $areas = Area::paginate(25)->lists('nombre');
-        $especialistas = User::paginate(25);
+        $areas = Area::all();
+        $especialistas = User::all();
         return view('newmeta',compact('areas','especialistas'));
+    }
+
+    public function comentario($id_proyecto){
+        $proyecto = Proyecto::findOrFail($id_proyecto);
+        $comentarios = Observacion::all();
+        return view('comentarios',compact('proyecto','comentarios'));
+    }
+
+    public function agregarcomentario(Request $request, $id_proyecto){
+
+        $ahora = new DateTime("now");
+        $nuevocomentario = new Observacion();
+        $nuevocomentario->id_proyecto= $id_proyecto;
+        $nuevocomentario->comentario = $request->get('comentario');
+        $nuevocomentario->nombre = \Auth::user()->name;
+        $nuevocomentario->fecha = $ahora;
+        $nuevocomentario->save();
+
+        return Redirect::back()->with('message','Operacion Exitosa !');
     }
 
     /**
@@ -38,125 +59,110 @@ class NewMetaController extends Controller {
      * @param Redirector $redirect
      * @return \Illuminate\Http\RedirectResponse
      */
+
+
+
     public function store(Request $request, Redirector $redirect)
     {
         $newmeta = new Proyecto($request->all());
-        $areas = Area::paginate(100);
-        $areameta = AreaMeta::paginate(1000);
+        $areas = Area::all();
+        $areameta = AreaMeta::all();
         $ahora = new DateTime("now");
 
         foreach($areas as $a){
-            if($a->id_area == $request->get('id_departamento')){
+            if($a->nombre == $request->get('id_departamento')){
                 $newmeta->id_departamento=$a->nombre;
                 $sho = $a->short;
             }
         }
         $newmeta->save();
-        ini_set('post_max_size','8M');
-        ini_set('upload_max_filesize','8M');
-        ini_set('max_execution_time','1000');
-        ini_set('max_input_time','1000');
 
         foreach($request->only('file') as $t) {
             if ($t) {
-                $mime = $t->getMimeType();
-                $extension = strtolower($t->getClientOriginalExtension());
-                $fileName = $t->getClientOriginalName() . '.' . $extension;
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$newmeta->nombre;
+                if ($t->isValid()) {
+                    $t->move($path, $fileName);
+                    chmod($path , 0777);
+                    $upload = new Upload();
+                    $upload->filename = $fileName;
+                    $upload->id_proyecto=$newmeta->id_proyecto;
+                    $upload->fecha=$ahora;
+                    $upload->tipo='levantamiento';
 
-                switch ($mime) {
-                    case "image/jpeg":
-                    case "image/png":
-                    case "image/gif":
-                    case "application/pdf":
-                        if ($t->isValid()) {
-                            $t->move($path, $fileName);
-                            chmod($path . "/" . $fileName, 0777);
-                            $upload = new Upload();
-                            $upload->filename = $fileName;
-                            $upload->id_proyecto=$newmeta->id_proyecto;
-                            $upload->fecha=$ahora;
-                            $upload->tipo='levantamiento';
-                            if ($upload->save()) {
-                                $newmeta->levantamiento=$fileName;
-                            } else {
-                                \File::delete($path . "/" . $fileName);
-
-                            }
-                        }
-                        break;
-
+                    if ($upload->save()) {
+                        $newmeta->levantamiento = $fileName;
+                    } else {
+                        \File::delete($path . "/" . $fileName);
+                    }
                 }
+                break;
             }
         }
         foreach($request->only('file2') as $t) {
             if ($t) {
-                $mime = $t->getMimeType();
-                $extension = strtolower($t->getClientOriginalExtension());
-                $fileName = $t->getClientOriginalName() . '.' . $extension;
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$newmeta->nombre;
+                if ($t->isValid()) {
+                    $t->move($path, $fileName);
+                    chmod($path . "/" . $fileName, 0777);
+                    $upload = new Upload();
+                    $upload->filename = $fileName;
+                    $upload->id_proyecto=$newmeta->id_proyecto;
+                    $upload->fecha=$ahora;
+                    $upload->tipo='plantrabajo';
+                    if ($upload->save()) {
+                        $newmeta->plantrabajo=$fileName;
+                    } else {
+                        \File::delete($path . "/" . $fileName);
 
-                switch ($mime) {
-                    case "image/jpeg":
-                    case "image/png":
-                    case "image/gif":
-                    case "application/pdf":
-                        if ($t->isValid()) {
-                            $t->move($path, $fileName);
-                            chmod($path . "/" . $fileName, 0777);
-                            $upload = new Upload();
-                            $upload->filename = $fileName;
-                            $upload->id_proyecto=$newmeta->id_proyecto;
-                            $upload->fecha=$ahora;
-                            $upload->tipo='plantrabajo';
-                            if ($upload->save()) {
-                                $newmeta->plantrabajo=$path . "/" . $fileName;
-                            } else {
-                                \File::delete($path . "/" . $fileName);
-
-                            }
-                        }
-                        break;
-
+                    }
                 }
+                break;
             }
         }
         foreach($request->only('file3') as $t) {
             if ($t) {
                 $mime = $t->getMimeType();
-                $extension = strtolower($t->getClientOriginalExtension());
-                $fileName = $t->getClientOriginalName() . '.' . $extension;
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$newmeta->nombre;
+                if ($t->isValid()) {
+                    $t->move($path, $fileName);
+                    chmod($path . "/" . $fileName, 0777);
+                    $upload = new Upload();
+                    $upload->filename = $fileName;
+                    $upload->id_proyecto=$newmeta->id_proyecto;
+                    $upload->fecha=$ahora;
+                    $upload->tipo='certificacion';
+                    if ($upload->save()) {
+                        $newmeta->certificacion=$fileName;
+                    } else {
+                        \File::delete($path . "/" . $fileName);
 
-                switch ($mime) {
-                    case "image/jpeg":
-                    case "image/png":
-                    case "image/gif":
-                    case "application/pdf":
-                        if ($t->isValid()) {
-                            $t->move($path, $fileName);
-                            chmod($path . "/" . $fileName, 0777);
-                            $upload = new Upload();
-                            $upload->filename = $fileName;
-                            $upload->id_proyecto=$newmeta->id_proyecto;
-                            $upload->fecha=$ahora;
-                            $upload->tipo='certificacion';
-                            if ($upload->save()) {
-                                $newmeta->certificacion=$path . "/" . $fileName;
-                            } else {
-                                \File::delete($path . "/" . $fileName);
-
-                            }
-                        }
-                        break;
-
+                    }
                 }
+                break;
             }
         }
-        $newmeta->save();
 
+        $newmeta->save();
         if($newmeta->tipo == 'Incidencia'){
-            $newmeta->codigo = 'INC '.$newmeta->id_proyecto.' - '.$sho;
+
+            $result =0;
+            $proyectos = Proyecto::all();
+            foreach ($proyectos as $pro) {
+                $fe = new DateTime($pro->fecha_ingreso);
+                if($pro->tipo == 'Incidencia' && ($fe->format('Y') == $ahora->format('Y'))) {
+                    If($pro->codigo)
+                        $result = $pro->codigo;
+                }
+            }
+            $result = preg_replace("/[^0-9]/", "", $result);
+            $indice=(integer) $result+1;
+            $newmeta->codigo = 'INC '.$indice.' - '.$sho;
+            $newmeta->save();
+
+
         }else{
             $cont = 0;
             $ahora = new DateTime("now");
@@ -169,16 +175,8 @@ class NewMetaController extends Controller {
             if(!$cont){
                 foreach($request->only('file1') as $t) {
                     if ($t) {
-                        $mime = $t->getMimeType();
-                        $extension = strtolower($t->getClientOriginalExtension());
-                        $fileName = $t->getClientOriginalName() . '.' . $extension;
+                        $fileName = $this->normaliza($t->getClientOriginalName());
                         $path = "storage/".$newmeta->nombre;
-
-                        switch ($mime) {
-                            case "image/jpeg":
-                            case "image/png":
-                            case "image/gif":
-                            case "application/pdf":
                                 if ($t->isValid()) {
                                     $t->move($path, $fileName);
                                     chmod($path . "/" . $fileName, 0777);
@@ -195,8 +193,6 @@ class NewMetaController extends Controller {
                                     }
                                 }
                                 break;
-
-                        }
                     }
                 }
             }else{
@@ -211,6 +207,7 @@ class NewMetaController extends Controller {
             }
 
             $cont = $cont+1;
+
             $newmeta->codigo = 'MET '.$cont.' - '.$sho;
 
             $areametanew = new AreaMeta();
@@ -230,14 +227,13 @@ class NewMetaController extends Controller {
     public function asignarespecialista(Request $request, $id_proyecto){
             $asignacion = new ProyectEspe();
             $asignacion->id_proyecto= $id_proyecto;
-            $especialistas = User::paginate(25);
+            $especialistas = User::all();
             $proyecto = Proyecto::findOrFail($id_proyecto);
             $proyecto->especialista=1;
             $proyecto->ext_int_enum='interno';
             $proyecto->save();
-
             foreach($especialistas as $t) {
-                if ($t->id == $request->get('especialista')) {
+                if ($t->nombre == $request->get('especialista')) {
                     $asignacion->id_especialista = $t->id;
                 }
             }
@@ -249,13 +245,13 @@ class NewMetaController extends Controller {
 
         $asignacion = new ProyectEspe();
         $asignacion->id_proyecto= $id_proyecto;
-        $proveedores= Proveedor::paginate(1000);
+        $proveedores= Proveedor::all();
         $proyecto = Proyecto::findOrFail($id_proyecto);
         $proyecto->especialista=1;
         $proyecto->ext_int_enum='externo';
         $proyecto->save();
         foreach($proveedores as $t) {
-            if ($t->id_proveedor == $request->get('proveedores')) {
+            if ($t->nombre == $request->get('proveedores')) {
                 $asignacion->id_proveedor = $t->id_proveedor ;
             }
         }
@@ -265,7 +261,6 @@ class NewMetaController extends Controller {
 
     public function agregarproveedor(Request $request){
         $proveedor = new Proveedor($request->all());
-
         $proveedor->save();
         return Redirect::back()->with('message','Operacion Exitosa !');
     }
@@ -277,32 +272,48 @@ class NewMetaController extends Controller {
     public function editar($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
 
-        $areas = Area::paginate(25)->lists('nombre');
-        $especialistas = User::paginate(25);
-        $proveedores = Proveedor::paginate(1000);
+        $areas = Area::all();
+        $cont=0;
+        foreach($areas as $a){
+            if($a->nombre == $proyecto->id_departamento){
+                $cont=$a->nombre;
+            }
+        }
+
+        $areas = Area::all();
+        $especialistas = User::all();
+        $proveedores = Proveedor::all();
         $proyectoespe = ProyectEspe::where('id_proyecto', '=', $id_proyecto)->get();
-        return view('editarproyecto',compact('proyecto','areas','especialistas','proyectoespe','proveedores'));
+        return view('editarproyecto',compact('proyecto','areas','especialistas','proyectoespe','proveedores','cont'));
 
     }
 
-    public function eliminarespe($id_proyecto){
+    public function eliminarespe($espe){
+        $ProyectEspe = ProyectEspe::where('id_especialista', '=', $espe)->firstOrFail();
 
-        $proyecto = Proyecto::findOrFail($id_proyecto);
-        $ProyectEspe = ProyectEspe::paginate(100);
-
-        foreach($ProyectEspe as $proyectespe){
-            if($proyectespe->id_proyecto == $proyecto->id_proyecto){
-                $proyectespe->delete();
+        $proyecto = Proyecto::findOrFail($ProyectEspe->id_proyecto);
+        $ProyectEspe->delete();
+        $proyectosespe = ProyectEspe::all();
+        $cont =0;
+        if($proyectosespe){
+            foreach($proyectosespe as $espe) {
+                if ($espe->id_proyecto == $proyecto->id_proyecto) {
+                    $cont = $cont + 1;
+                }
+            }
+            if($cont==0){
                 $proyecto->ext_int_enum = NULL;
+                $proyecto->especialista = 0;
             }
             $proyecto->save();
         }
+
         return Redirect::back()->with('message','Operacion Exitosa !');
     }
     
     public function eliminarprove($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
-        $ProyectEspe = ProyectEspe::paginate(100);
+        $ProyectEspe = ProyectEspe::all();
 
         foreach($ProyectEspe as $proyectespe){
             if($proyectespe->id_proyecto == $proyecto->id_proyecto){
@@ -321,9 +332,9 @@ class NewMetaController extends Controller {
     public function descargarlev($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
         $path = "storage/".$proyecto->nombre;
-        $extension = mime_content_type($path . "/" .$proyecto->levantamiento);
-        $file = File::get($path . "/" .$proyecto->levantamiento);
-        return (new Response($file, 200))->header('Content-Type', $extension);
+        return \Response::download(
+            $path . "/" .$proyecto->levantamiento, $proyecto->levantamiento
+        );
     }
     public function eliminarlev($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
@@ -331,7 +342,7 @@ class NewMetaController extends Controller {
         File::delete($path . "/" .$proyecto->levantamiento);
         $proyecto->levantamiento=NULL;
         $proyecto->save();
-        $archivos = Upload::paginate(1000);
+        $archivos = Upload::all();
         foreach($archivos as $file){
             if($file->id_proyecto == $proyecto->id_proyecto and $file->tipo == 'levantamiento'){
                 $file->delete();
@@ -343,7 +354,7 @@ class NewMetaController extends Controller {
     }
     public function descargarfo($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
-        $areameta = AreaMeta::paginate(1000);
+        $areameta = AreaMeta::all();
         $ahora = new DateTime("now");
 
         foreach($areameta as $t){
@@ -351,9 +362,9 @@ class NewMetaController extends Controller {
             if($proyecto->id_departamento == $t->id_area and $ahora->format('Y') == $ano->format('Y')){
                 $metaprimera = Proyecto::find($t->id_meta);
                 $path = "storage/".$metaprimera->nombre;
-                $extension = mime_content_type($path . "/" .$metaprimera->fouct03);
-                $file = File::get($path . "/" .$metaprimera->fouct03);
-                return (new Response($file, 200))->header('Content-Type', $extension);
+                return \Response::download(
+                    $path . "/" .$proyecto->fouct03, $proyecto->fouct03
+                );
             }
         }
 
@@ -365,7 +376,7 @@ class NewMetaController extends Controller {
         File::delete($path . "/" .$proyecto->fouct03);
         $proyecto->fouct03=NULL;
         $proyecto->save();
-        $archivos = Upload::paginate(1000);
+        $archivos = Upload::all();
         foreach($archivos as $file){
             if($file->id_proyecto == $proyecto->id_proyecto and $file->tipo == 'fouct03'){
                 $file->delete();
@@ -376,9 +387,9 @@ class NewMetaController extends Controller {
     public function descargarplan($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
         $path = "storage/".$proyecto->nombre;
-        $extension = mime_content_type($path . "/" .$proyecto->plantrabajo);
-        $file = File::get($path . "/" .$proyecto->plantrabajo);
-        return (new Response($file, 200))->header('Content-Type', $extension);
+        return \Response::download(
+            $path . "/" .$proyecto->plantrabajo, $proyecto->plantrabajo
+        );
     }
     public function eliminarplan($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
@@ -386,7 +397,7 @@ class NewMetaController extends Controller {
         File::delete($path . "/" .$proyecto->plantrabajo);
         $proyecto->plantrabajo=NULL;
         $proyecto->save();
-        $archivos = Upload::paginate(1000);
+        $archivos = Upload::all();
         foreach($archivos as $file){
             if($file->id_proyecto == $proyecto->id_proyecto and $file->tipo == 'plantrabajo'){
                 $file->delete();
@@ -397,9 +408,9 @@ class NewMetaController extends Controller {
     public function descargarcer($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
         $path = "storage/".$proyecto->nombre;
-        $extension = mime_content_type($path . "/" .$proyecto->certificacion);
-        $file = File::get($path . "/" .$proyecto->certificacion);
-        return (new Response($file, 200))->header('Content-Type', $extension);
+        return \Response::download(
+            $path . "/" .$proyecto->certificacion, $proyecto->certificacion
+        );
     }
     public function eliminarcer($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
@@ -407,7 +418,7 @@ class NewMetaController extends Controller {
         File::delete($path . "/" .$proyecto->certificacion);
         $proyecto->certificacion=NULL;
         $proyecto->save();
-        $archivos = Upload::paginate(1000);
+        $archivos = Upload::all();
         foreach($archivos as $file){
             if($file->id_proyecto == $proyecto->id_proyecto and $file->tipo == 'certificacion'){
                 $file->delete();
@@ -418,9 +429,9 @@ class NewMetaController extends Controller {
     public function descargarorden($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
         $path = "storage/".$proyecto->nombre;
-        $extension = mime_content_type($path . "/" .$proyecto->ordencompra);
-        $file = File::get($path . "/" .$proyecto->ordencompra);
-        return (new Response($file, 200))->header('Content-Type', $extension);
+        return \Response::download(
+            $path . "/" .$proyecto->ordencompra, $proyecto->ordencompra
+        );
     }
     public function eliminarorden($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
@@ -434,9 +445,9 @@ class NewMetaController extends Controller {
     public function descargarfactura($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
         $path = "storage/".$proyecto->nombre;
-        $extension = mime_content_type($path . "/" .$proyecto->factura);
-        $file = File::get($path . "/" .$proyecto->factura);
-        return (new Response($file, 200))->header('Content-Type', $extension);
+        return \Response::download(
+            $path . "/" .$proyecto->levantamiento, $proyecto->factura
+        );
     }
     public function eliminarfactura($id_proyecto){
         $proyecto = Proyecto::findOrFail($id_proyecto);
@@ -446,30 +457,67 @@ class NewMetaController extends Controller {
         $proyecto->save();
         return Redirect::back()->with('message','Operacion Exitosa !');
     }
+    public function descargarindi($id_proyecto){
+        $proyecto = Proyecto::findOrFail($id_proyecto);
+        $path = "storage/".$proyecto->nombre;
+        return \Response::download(
+            $path . "/" .$proyecto->indicadores, $proyecto->indicadores
+        );
+    }
+    public function eliminarindi($id_proyecto){
+        $proyecto = Proyecto::findOrFail($id_proyecto);
+        $path = "storage/".$proyecto->nombre;
+        File::delete($path . "/" .$proyecto->indicadores);
+        $proyecto->indicadores=NULL;
+        $proyecto->save();
+        return Redirect::back()->with('message','Operacion Exitosa !');
+    }
+    public function descargarinforme($id_proyecto){
+        $proyecto = Proyecto::findOrFail($id_proyecto);
+        $path = "storage/".$proyecto->nombre;
+        return \Response::download(
+            $path . "/" .$proyecto->informe, $proyecto->informe
+        );
+    }
+    public function eliminarinforme($id_proyecto){
+        $proyecto = Proyecto::findOrFail($id_proyecto);
+        $path = "storage/".$proyecto->nombre;
+        File::delete($path . "/" .$proyecto->informe);
+        $proyecto->informe=NULL;
+        $proyecto->save();
+        return Redirect::back()->with('message','Operacion Exitosa !');
+    }
+
+    function normaliza ($cadena){
+        $originales = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûýýþÿŔŕ';
+        $modificadas = 'aaaaaaaceeeeiiiidnoooooouuuuybsaaaaaaaceeeeiiiidnoooooouuuyybyRr';
+        $cadena = utf8_decode($cadena);
+        $cadena = strtr($cadena, utf8_decode($originales), $modificadas);
+        $cadena = strtolower($cadena);
+        return utf8_encode($cadena);
+    }
 
     public function update($id_proyecto, Request $request){
         $proyecto = Proyecto::findOrFail($id_proyecto);
-
         $proyecto->fill($request->all());
-        $areameta = AreaMeta::paginate(1000);
-        $areas = Area::paginate(100);
+        $areameta = AreaMeta::all();
+        $areas = Area::all();
 
         $ahora = new DateTime("now");
-
         foreach($areas as $a){
-            if($a->id_area == $request->get('id_departamento')){
-                $proyecto->id_departamento=$a->nombre;
-                $sho = $a->short;
-            }
-            if($proyecto->id_departamento == $a->nombre){
-                $sho = $a->short;
+	    if($request->get('id_departamento')){
+              if($a->nombre == $request->get('id_departamento')){
+                  $proyecto->id_departamento=$a->nombre;
+                  $sho = $a->short;
+              }
             }
         }
 
 
         foreach($request->only('file') as $t) {
             if ($t) {
-                $fileName = $t->getClientOriginalName() ;
+
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$proyecto->nombre;
                      if ($t->isValid()) {
                          $t->move($path, $fileName);
@@ -491,7 +539,7 @@ class NewMetaController extends Controller {
         }
         foreach($request->only('file1') as $t) {
             if ($t) {
-                $fileName = $t->getClientOriginalName();
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$proyecto->nombre;
                         if ($t->isValid()) {
                             $t->move($path, $fileName);
@@ -513,7 +561,7 @@ class NewMetaController extends Controller {
         }
         foreach($request->only('file2') as $t) {
             if ($t) {
-                $fileName = $t->getClientOriginalName();
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$proyecto->nombre;
                         if ($t->isValid()) {
                             $t->move($path, $fileName);
@@ -535,8 +583,8 @@ class NewMetaController extends Controller {
         }
         foreach($request->only('file3') as $t) {
             if ($t) {
-                $mime = $t->getMimeType();
-                $fileName = $t->getClientOriginalName();
+                //dd($t);
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$proyecto->nombre;
                         if ($t->isValid()) {
                             $t->move($path, $fileName);
@@ -558,8 +606,7 @@ class NewMetaController extends Controller {
         }
         foreach($request->only('file4') as $t) {
             if ($t) {
-                $mime = $t->getMimeType();
-                $fileName = $t->getClientOriginalName();
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$proyecto->nombre;
                 if ($t->isValid()) {
                     $t->move($path, $fileName);
@@ -580,8 +627,7 @@ class NewMetaController extends Controller {
         }
         foreach($request->only('file5') as $t) {
             if ($t) {
-                $mime = $t->getMimeType();
-                $fileName = $t->getClientOriginalName();
+                $fileName = $this->normaliza($t->getClientOriginalName());
                 $path = "storage/".$proyecto->nombre;
                 if ($t->isValid()) {
                     $t->move($path, $fileName);
@@ -600,10 +646,56 @@ class NewMetaController extends Controller {
                 break;
             }
         }
+
+        foreach($request->only('file6') as $t) {
+            if ($t) {
+                $fileName = $this->normaliza($t->getClientOriginalName());
+                $path = "storage/".$proyecto->nombre;
+                if ($t->isValid()) {
+                    $t->move($path, $fileName);
+                    chmod($path . "/" . $fileName, 0777);
+                    $upload = new Upload();
+                    $upload->filename = $fileName;
+                    $upload->id_proyecto=$proyecto->id_proyecto;
+                    $upload->fecha=$ahora;
+                    if ($upload->save()) {
+                        $proyecto->indicadores=$fileName;
+                    } else {
+                        \File::delete($path . "/" . $fileName);
+
+                    }
+                }
+                break;
+            }
+        }
+        foreach($request->only('file7') as $t) {
+            if ($t) {
+                $fileName = $this->normaliza($t->getClientOriginalName());
+                $path = "storage/".$proyecto->nombre;
+                if ($t->isValid()) {
+                    $t->move($path, $fileName);
+                    chmod($path . "/" . $fileName, 0777);
+                    $upload = new Upload();
+                    $upload->filename = $fileName;
+                    $upload->id_proyecto=$proyecto->id_proyecto;
+                    $upload->fecha=$ahora;
+                    if ($upload->save()) {
+                        $proyecto->informe=$fileName;
+                    } else {
+                        \File::delete($path . "/" . $fileName);
+
+                    }
+                }
+                break;
+            }
+        }
         $proyecto->save();
 
         if($proyecto->tipo == 'Incidencia'){
-            $proyecto->codigo = 'INC '.$proyecto->id_proyecto.' - '.$sho;
+          if(isset($sho)){
+                $result = preg_replace("/[^0-9]/", "", $proyecto->codigo);
+                $proyecto->codigo = 'INC '.$result.' - '.$sho;
+          }
         }else{
 
         }
@@ -649,6 +741,9 @@ class NewMetaController extends Controller {
         {
             App::abort(404);
         }
+
+        $path = "storage/".$proyecto->nombre;
+        File::delete($path);
 
         $proyecto->delete();
 

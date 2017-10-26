@@ -1,5 +1,12 @@
 <?php namespace siprotec\Http\Controllers;
 
+use siprotec\Proveedor;
+use siprotec\ProyectEspe;
+use siprotec\Proyecto;
+use siprotec\User;
+use siprotec\Area;
+use Request;
+
 class HomeController extends Controller {
 
 	/*
@@ -28,9 +35,13 @@ class HomeController extends Controller {
 	 *
 	 * @return Response
 	 */
-	public function index()
+	public function indexpro()
 	{
-		return view('newhome');
+        $proyectos = Proyecto::name(Request::input('name'))->orderBy('id_proyecto','ASC')->paginate(10);
+        $ProyectEspe = ProyectEspe::paginate(100);
+        $especialistas = User::paginate(100);
+        $proveedores = Proveedor::paginate(1000);
+        return view('proyectos', compact('proyectos','ProyectEspe','especialistas','proveedores'));
 	}
 
 }

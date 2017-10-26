@@ -6,14 +6,14 @@ class Observacion extends Model {
 
     public $timestamps = false;
 
-    protected $table = 'uploads';
+    protected $table = 'Observacion';
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
-    protected $fillable = ['filename', 'fecha', 'id_proyecto' , 'tipo'];
+    protected $fillable = ['id_usuario', 'id_proyecto', 'comentario' , 'fecha','id_pase', 'nombre'];
 
     /**
      * The attributes excluded from the model's JSON form.
